@@ -4,6 +4,8 @@ from uuid import uuid4
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from app.services.pdf_reader import extract_text_from_pdf
+from app.services.chunker import split_text_into_chunks
+from app.services.embeddings import create_embeddings
 
 
 router = APIRouter(prefix="/resume", tags=["Resume"])
@@ -34,12 +36,18 @@ async def upload_resume(file: UploadFile = File(...)):
                 status_code=400,
                 detail="No readable text was found in the PDF.",
             )
-
+        chunks = split_text_into_chunks(resume_text)
+        embeddings = create_embeddings(chunks)
         return {
-            "message": "Resume uploaded successfully",
-            "file_name": file.filename,
-            "characters_extracted": len(resume_text),
-            "text_preview": resume_text[:500],
+           " message": "Resume uploaded and embedded successfully",
+           "file_name": file.filename,
+    "characters_extracted": len(resume_text),
+    "number_of_chunks": len(chunks),
+    "number_of_embeddings": len(embeddings),
+    "embedding_dimension": (
+        embeddings.shape[1] if len(embeddings) > 0 else 0
+        ),
+    "first_chunk": chunks[0] if chunks else "",
         }
 
     except HTTPException:
