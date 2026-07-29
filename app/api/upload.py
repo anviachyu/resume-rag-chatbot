@@ -1,5 +1,6 @@
 from pathlib import Path
 from uuid import uuid4
+from app.services.vector_store import save_vector_store
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
@@ -38,17 +39,18 @@ async def upload_resume(file: UploadFile = File(...)):
             )
         chunks = split_text_into_chunks(resume_text)
         embeddings = create_embeddings(chunks)
+        vectors_stored = save_vector_store(embeddings, chunks)
         return {
-           " message": "Resume uploaded and embedded successfully",
-           "file_name": file.filename,
+    "message": "Resume stored in FAISS successfully",
+    "file_name": file.filename,
     "characters_extracted": len(resume_text),
     "number_of_chunks": len(chunks),
     "number_of_embeddings": len(embeddings),
     "embedding_dimension": (
         embeddings.shape[1] if len(embeddings) > 0 else 0
-        ),
-    "first_chunk": chunks[0] if chunks else "",
-        }
+    ),
+    "vectors_stored": vectors_stored,
+}
 
     except HTTPException:
         raise
